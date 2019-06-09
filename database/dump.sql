@@ -681,20 +681,12 @@ AS
 $BODY$
 DECLARE
     result          public.type_post;
-    author_nickname citext;
 BEGIN
-    SELECT nickname INTO author_nickname FROM public.person WHERE nickname = arg_author;
-    IF NOT FOUND THEN
-        RAISE no_data_found;
-    END IF;
     INSERT INTO public.post(author, thread, forum, message, parent, created)
     VALUES (arg_author, arg_id, arg_forum, arg_message, arg_parent, arg_created) RETURNING *
         INTO result.id, result.author, result.thread, result.forum,
             result.message, result.is_edited, result.parent, result.created, result.post_path;
     RETURN result;
-EXCEPTION
-    WHEN foreign_key_violation THEN
-        RAISE foreign_key_violation;
 END;
 $BODY$
     LANGUAGE plpgsql;

@@ -66,24 +66,19 @@ func CreatNewPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(inputPosts) != 0 {
-		if inputPosts[0].Parent != 0 {
-			post, err := database.GetInstance().GetPost(inputPosts[0].Parent)
-			if err != nil {
-				if err.Error() == errorPqNoDataFound  {
-					myJSON := fmt.Sprintf(`{"%s%s"}`, messageCantFind, cantFindParentOrUser)
-					w.WriteHeader(http.StatusConflict)
-					_, err = w.Write([]byte(myJSON))
-					if err != nil {
-						logger.Error.Println(err.Error())
-					}
-					return
-				}
-				w.WriteHeader(http.StatusInternalServerError)
-				logger.Error.Println(err.Error())
-				return
-			}
-			if post.Thread != thread.ID {
+	if len(inputPosts) == 0 {
+		w.WriteHeader(http.StatusCreated)
+		_, err = w.Write([]byte(`[]`))
+		if err != nil {
+			logger.Error.Println(err.Error())
+		}
+		return
+	}
+
+	if inputPosts[0].Parent != 0 {
+		post, err := database.GetInstance().GetPost(inputPosts[0].Parent)
+		if err != nil {
+			if err.Error() == errorPqNoDataFound {
 				myJSON := fmt.Sprintf(`{"%s%s"}`, messageCantFind, cantFindParentOrUser)
 				w.WriteHeader(http.StatusConflict)
 				_, err = w.Write([]byte(myJSON))
@@ -92,8 +87,35 @@ func CreatNewPostHandler(w http.ResponseWriter, r *http.Request) {
 				}
 				return
 			}
-
+			w.WriteHeader(http.StatusInternalServerError)
+			logger.Error.Println(err.Error())
+			return
 		}
+		if post.Thread != thread.ID {
+			myJSON := fmt.Sprintf(`{"%s%s"}`, messageCantFind, cantFindParentOrUser)
+			w.WriteHeader(http.StatusConflict)
+			_, err = w.Write([]byte(myJSON))
+			if err != nil {
+				logger.Error.Println(err.Error())
+			}
+			return
+		}
+	}
+
+	_, err = database.GetInstance().GetUser(inputPosts[0].Author)
+	if err != nil {
+		if err.Error() == errorPqNoDataFound {
+			myJSON := fmt.Sprintf(`{"%s%s%s"}`, messageCantFind, cantFindUser, inputPosts[0].Author)
+			w.WriteHeader(http.StatusNotFound)
+			_, err = w.Write([]byte(myJSON))
+			if err != nil {
+				logger.Error.Println(err.Error())
+			}
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Error.Println(err.Error())
+		return
 	}
 
 	created := time.Now()
@@ -102,24 +124,6 @@ func CreatNewPostHandler(w http.ResponseWriter, r *http.Request) {
 	for _, post := range inputPosts {
 		post, err = database.GetInstance().CreatePost(post, created, thread.ID, thread.Forum)
 		if err != nil {
-			if err.Error() == errorPqNoDataFound {
-				myJSON := fmt.Sprintf(`{"%s%s%s"}`, messageCantFind, cantFindUser, post.Author)
-				w.WriteHeader(http.StatusNotFound)
-				_, err = w.Write([]byte(myJSON))
-				if err != nil {
-					logger.Error.Println(err.Error())
-				}
-				return
-			}
-			if err.Error() == errorForeignKeyViolation {
-				myJSON := fmt.Sprintf(`{"%s%s"}`, messageCantFind, cantFindParentOrUser)
-				w.WriteHeader(http.StatusConflict)
-				_, err = w.Write([]byte(myJSON))
-				if err != nil {
-					logger.Error.Println(err.Error())
-				}
-				return
-			}
 			w.WriteHeader(http.StatusInternalServerError)
 			logger.Error.Println(err.Error())
 			return
