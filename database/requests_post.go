@@ -80,3 +80,25 @@ func (db *databaseManager) GetPostInfo(id int, related []string) (postInfo model
 	err = tx.Commit()
 	return
 }
+
+func (db *databaseManager) GetPost(id int) (post models.Post, err error) {
+
+	tx, err := db.dataBase.Begin()
+	if err != nil {
+		return
+	}
+	defer tx.Rollback()
+
+	row := tx.QueryRow(
+		`SELECT id, author, thread, forum, message, is_edited, parent, created 
+				FROM func_get_post($1::INT)`, id)
+
+	err = row.Scan(&post.ID, &post.Author, &post.Thread, &post.Forum,
+		&post.Message, &post.IsEdited, &post.Parent, &post.Created)
+	if err != nil {
+		return
+	}
+
+	err = tx.Commit()
+	return
+}

@@ -681,18 +681,11 @@ AS
 $BODY$
 DECLARE
     result          public.type_post;
-    parent_thread   INT;
     author_nickname citext;
 BEGIN
     SELECT nickname INTO author_nickname FROM public.person WHERE nickname = arg_author;
     IF NOT FOUND THEN
         RAISE no_data_found;
-    END IF;
-    IF arg_parent != '0' THEN
-        SELECT thread INTO parent_thread FROM public.post WHERE id = arg_parent;
-        IF parent_thread != arg_id THEN
-            RAISE foreign_key_violation;
-        END IF;
     END IF;
     INSERT INTO public.post(author, thread, forum, message, parent, created)
     VALUES (arg_author, arg_id, arg_forum, arg_message, arg_parent, arg_created) RETURNING *

@@ -66,6 +66,36 @@ func CreatNewPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(inputPosts) != 0 {
+		if inputPosts[0].Parent != 0 {
+			post, err := database.GetInstance().GetPost(inputPosts[0].Parent)
+			if err != nil {
+				if err.Error() == errorPqNoDataFound  {
+					myJSON := fmt.Sprintf(`{"%s%s"}`, messageCantFind, cantFindParentOrUser)
+					w.WriteHeader(http.StatusConflict)
+					_, err = w.Write([]byte(myJSON))
+					if err != nil {
+						logger.Error.Println(err.Error())
+					}
+					return
+				}
+				w.WriteHeader(http.StatusInternalServerError)
+				logger.Error.Println(err.Error())
+				return
+			}
+			if post.Thread != thread.ID {
+				myJSON := fmt.Sprintf(`{"%s%s"}`, messageCantFind, cantFindParentOrUser)
+				w.WriteHeader(http.StatusConflict)
+				_, err = w.Write([]byte(myJSON))
+				if err != nil {
+					logger.Error.Println(err.Error())
+				}
+				return
+			}
+
+		}
+	}
+
 	created := time.Now()
 
 	outPosts := make([]models.Post, 0)
