@@ -1035,32 +1035,28 @@ $BODY$
 SELECT *
 FROM func_add_admin();
 
-CREATE INDEX post_rating_d_idx ON public.post USING btree (post_path DESC);
+CREATE INDEX IF NOT EXISTS post_idx ON public.post USING btree (id);
 
-CREATE INDEX post_rating_idx ON public.post USING btree (post_path);
+CREATE INDEX IF NOT EXISTS post_rating_idx ON public.post USING btree (post_path);
 
-CREATE INDEX post_author_idx ON public.post USING btree (author);
+CREATE INDEX IF NOT EXISTS post_author_idx ON public.post USING btree (author);
 
-CREATE INDEX post_thread_idx ON public.post USING btree (thread);
+CREATE INDEX IF NOT EXISTS post_thread_idx ON public.post USING btree (thread, id);
 
-CREATE INDEX post_parent_idx ON public.post USING btree (parent);
+CREATE INDEX IF NOT EXISTS post_created_idx ON public.post USING btree (created);
 
-CREATE INDEX post_created_d_idx ON public.post USING btree (created DESC);
+CREATE INDEX IF NOT EXISTS thread_forum_idx ON public.thread USING btree (forum);
 
-CREATE INDEX post_created_idx ON public.post USING btree (created);
+CREATE INDEX IF NOT EXISTS thread_author_idx ON public.thread USING btree (author);
 
-CREATE INDEX thread_forum_idx ON public.thread USING btree (forum);
+CREATE INDEX IF NOT EXISTS forum_author_idx ON public.forum USING btree (author);
 
-CREATE INDEX thread_author_idx ON public.thread USING btree (author);
+CREATE INDEX IF NOT EXISTS forum_id_idx ON public.forum USING btree (id);
 
-CREATE INDEX forum_author_idx ON public.forum USING btree (author);
+CREATE INDEX IF NOT EXISTS forum_users_user_nickname_idx ON public.forum_users USING btree (user_nickname);
 
-CREATE INDEX forum_id_idx ON public.forum USING btree (id);
+CREATE INDEX IF NOT EXISTS forum_users_forum_slug_idx ON public.forum_users USING btree (forum_slug);
 
-CREATE INDEX forum_users_user_nickname_idx ON public.forum_users USING btree (user_nickname);
-
-CREATE INDEX forum_users_forum_slug_idx ON public.forum_users USING btree (forum_slug);
-
-CREATE INDEX person_id_idx ON public.forum USING btree (id);
+CREATE INDEX IF NOT EXISTS person_id_idx ON public.forum USING btree (id);
 
 
