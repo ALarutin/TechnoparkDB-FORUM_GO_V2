@@ -2,7 +2,6 @@ package database
 
 import (
 	"data_base/models"
-	"data_base/presentation/logger"
 	"fmt"
 	"github.com/jackc/pgx"
 )
@@ -25,7 +24,6 @@ func (db *databaseManager) CreatePost(posts []models.Post, id int, forum string)
 
 	str += ` RETURNING id, author, thread, forum, message, is_edited, parent, created`
 
-	logger.Error.Print(str)
 	rows, err := tx.Query(str)
 	if err != nil {
 		return
