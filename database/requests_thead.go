@@ -2,23 +2,47 @@ package database
 
 import (
 	"data_base/models"
+	"data_base/presentation/logger"
+	"fmt"
 	"github.com/jackc/pgx"
-	"time"
 )
 
-func (db *databaseManager) CreatePost(post models.Post, created time.Time, id int, forum string) (p models.Post, err error) {
+func (db *databaseManager) CreatePost(posts []models.Post, id int, forum string) (outPs []models.Post, err error) {
 	tx, err := db.dataBase.Begin()
 	if err != nil {
 		return
 	}
 	defer tx.Rollback()
 
-	row := tx.QueryRow(`SELECT id, author, thread, forum, message, is_edited, parent, created 
-										FROM func_create_post($1::citext, $2::INT, $3::text, $4::INT, $5::citext, $6::TIMESTAMP WITH TIME ZONE)`,
-		post.Author, id, post.Message, post.Parent, forum, created)
-	err = row.Scan(&p.ID, &p.Author, &p.Thread, &p.Forum,
-		&p.Message, &p.IsEdited, &p.Parent, &p.Created)
+	str := `INSERT INTO public.post(author, thread, forum, message, parent, created) VALUES`
+
+	for i, p := range posts{
+		if i != 0 {
+			str += `,`
+		}
+		str += fmt.Sprintf(` ('%v', %v, '%v', '%v', %v, now())`, p.Author, id, forum,  p.Message, p.Parent)
+	}
+
+	str += ` RETURNING id, author, thread, forum, message, is_edited, parent, created`
+
+	logger.Error.Print(str)
+	rows, err := tx.Query(str)
 	if err != nil {
+		return
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var p models.Post
+		err = rows.Scan(&p.ID, &p.Author, &p.Thread, &p.Forum,
+			&p.Message, &p.IsEdited, &p.Parent, &p.Created)
+		if err != nil {
+			return
+		}
+		outPs = append(outPs, p)
+	}
+	if rows.Err() != nil {
+		err = rows.Err()
 		return
 	}
 

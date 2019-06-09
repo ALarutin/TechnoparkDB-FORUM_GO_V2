@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
-	"time"
 )
 
 func CreatNewPostHandler(w http.ResponseWriter, r *http.Request) {
@@ -118,17 +117,11 @@ func CreatNewPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	created := time.Now()
-
-	outPosts := make([]models.Post, 0)
-	for _, post := range inputPosts {
-		post, err = database.GetInstance().CreatePost(post, created, thread.ID, thread.Forum)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			logger.Error.Println(err.Error())
-			return
-		}
-		outPosts = append(outPosts, post)
+	outPosts, err := database.GetInstance().CreatePost(inputPosts, thread.ID, thread.Forum)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Error.Println(err.Error())
+		return
 	}
 
 	data, err := json.Marshal(outPosts)
