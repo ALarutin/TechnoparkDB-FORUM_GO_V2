@@ -43,8 +43,6 @@ func CreateBranchHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	logger.Info.Print(thread.Slug)
-
 	thread.Forum = slugUrl
 
 	t, err := database.GetInstance().CreateThread(thread)

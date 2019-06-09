@@ -688,9 +688,11 @@ BEGIN
     IF NOT FOUND THEN
         RAISE no_data_found;
     END IF;
-    SELECT thread INTO parent_thread FROM public.post WHERE id = arg_parent;
-    IF arg_parent != '0' AND parent_thread != arg_id THEN
-        RAISE foreign_key_violation;
+    IF arg_parent != '0' THEN
+        SELECT thread INTO parent_thread FROM public.post WHERE id = arg_parent;
+        IF parent_thread != arg_id THEN
+            RAISE foreign_key_violation;
+        END IF;
     END IF;
     INSERT INTO public.post(author, thread, forum, message, parent, created)
     VALUES (arg_author, arg_id, arg_forum, arg_message, arg_parent, arg_created) RETURNING *
@@ -872,49 +874,6 @@ BEGIN
 END;
 $BODY$
     LANGUAGE plpgsql;
-
--- CREATE OR REPLACE FUNCTION func_get_posts_flat(arg_slug citext, arg_id INT, arg_limit INT, arg_since INT,
---                                                arg_desc BOOLEAN)
---     RETURNS SETOF public.type_post
--- AS
--- $BODY$
--- DECLARE
---     result        public.type_post;
---     arg_thread_id INT;
---     rec           RECORD;
--- BEGIN
---     SELECT id
---     INTO arg_thread_id
---     FROM public.thread
---     WHERE slug = arg_slug
---        OR id = arg_id;
---     IF NOT FOUND THEN
---         RAISE no_data_found;
---     END IF;
---     FOR rec IN SELECT *
---                FROM public.post
---                WHERE thread = arg_thread_id
---                  AND CASE
---                          WHEN arg_since = '0' THEN TRUE
---                          WHEN arg_desc THEN id < arg_since
---                          ELSE id > arg_since END
---                ORDER BY (CASE WHEN arg_desc THEN id END) DESC,
---                         (CASE WHEN NOT arg_desc THEN id END) ASC
---                LIMIT arg_limit
---         LOOP
---             result.id := rec.id;
---             result.author := rec.author;
---             result.thread := rec.thread;
---             result.forum := rec.forum;
---             result.message := rec.message;
---             result.is_edited := rec.is_edited;
---             result.parent := rec.parent;
---             result.created := rec.created;
---             RETURN next result;
---         END LOOP;
--- END;
--- $BODY$
---     LANGUAGE plpgsql;
 
 CREATE OR REPLACE FUNCTION func_get_posts_flat(arg_slug citext, arg_id INT, arg_limit INT, arg_since INT,
                                                arg_desc BOOLEAN)
