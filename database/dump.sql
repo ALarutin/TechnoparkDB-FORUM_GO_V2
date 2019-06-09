@@ -1043,6 +1043,8 @@ CREATE INDEX post_author_idx ON public.post USING btree (author);
 
 CREATE INDEX post_thread_idx ON public.post USING btree (thread);
 
+CREATE INDEX post_parent_idx ON public.post USING btree (parent);
+
 CREATE INDEX post_created_d_idx ON public.post USING btree (created DESC);
 
 CREATE INDEX post_created_idx ON public.post USING btree (created);
