@@ -1035,17 +1035,21 @@ $BODY$
 SELECT *
 FROM func_add_admin();
 
-CREATE INDEX IF NOT EXISTS post_idx ON public.post USING btree (id) WHERE (parent <> 0);
+CREATE INDEX IF NOT EXISTS post_idx ON public.post USING btree (thread, parent, id) WHERE (parent <> 0);
 
 CREATE INDEX IF NOT EXISTS post_rating_idx ON public.post USING btree (post_path);
 
-CREATE INDEX IF NOT EXISTS post_thread_idx ON public.post USING btree (thread);
+CREATE INDEX IF NOT EXISTS post_thread_idx ON public.post USING btree (thread, id);
 
 CREATE INDEX IF NOT EXISTS post_created_idx ON public.post USING btree (created);
 
 CREATE INDEX IF NOT EXISTS thread_forum_idx ON public.thread USING btree (forum);
 
 CREATE INDEX IF NOT EXISTS thread_author_idx ON public.thread USING btree (author);
+
+CREATE INDEX IF NOT EXISTS thread_slug_idx ON public.thread USING btree (slug);
+
+CREATE INDEX IF NOT EXISTS thread_idx ON public.thread USING btree (id);
 
 CREATE INDEX IF NOT EXISTS forum_author_idx ON public.forum USING btree (author);
 
