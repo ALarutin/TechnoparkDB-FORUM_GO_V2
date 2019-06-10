@@ -217,7 +217,7 @@ func GetRouter() (router *mux.Router) {
 			HandlerFunc(r.Handler)
 	}
 	router.Use(middleware.ContentType)
-	router.Use(middleware.Logger)
+	//router.Use(middleware.Logger)
 	router.Use(middleware.Panic)
 	return
 }

@@ -17,10 +17,14 @@ func Logger(this http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		this.ServeHTTP(w, r)
-		if time.Since(start) > time.Microsecond * 100000 {
-			logger.Info.Printf("\nmethod: [%s]\naddr: %s\nparams: %s\npath: %s\nwork time: %s\n",
-				r.Method, r.RemoteAddr, r.URL.RawQuery, r.URL.Path, time.Since(start))
+		if time.Since(start) > time.Microsecond*50000 {
+			logger.Info.Printf("\nTOO SLOW///////////////////////////////////////////////////////////\nmethod: [%s]\npath: %s\nparams: %s\naddr: %s\nwork time: %s\n",
+				r.Method, r.URL.Path, r.URL.RawQuery, r.RemoteAddr, time.Since(start))
 		}
+		//else {
+		//	logger.Info.Printf("\nmethod: [%s]\npath: %s\nparams: %s\naddr: %s\nwork time: %s\n",
+		//		r.Method, r.URL.Path, r.URL.RawQuery, r.RemoteAddr, time.Since(start))
+		//}
 	})
 }
 

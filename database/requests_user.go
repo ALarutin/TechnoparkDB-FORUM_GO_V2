@@ -3,21 +3,13 @@ package database
 import "data_base/models"
 
 func (db *databaseManager) GetUser(nickname string) (user models.User, err error) {
-	tx, err := db.dataBase.Begin()
-	if err != nil {
-		return
-	}
-	defer tx.Rollback()
-
-	row := tx.QueryRow(
+	row := db.dataBase.QueryRow(
 		`SELECT * FROM func_get_user($1::citext)`,
 		nickname)
 	err = row.Scan(&user.IsNew, &user.ID, &user.Nickname, &user.Email, &user.Fullname, &user.About)
 	if err != nil {
 		return
 	}
-
-	err = tx.Commit()
 	return
 }
 

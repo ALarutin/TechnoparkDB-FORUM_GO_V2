@@ -43,30 +43,16 @@ func (db *databaseManager) CreateThread(thread models.Thread) (t models.Thread, 
 }
 
 func (db *databaseManager) GetForum(slug string) (forum models.Forum, err error) {
-	tx, err := db.dataBase.Begin()
-	if err != nil {
-		return
-	}
-	defer tx.Rollback()
-
-	row := tx.QueryRow(`SELECT * FROM func_get_forum($1::citext)`, slug)
+	row := db.dataBase.QueryRow(`SELECT * FROM func_get_forum($1::citext)`, slug)
 	err = row.Scan(&forum.IsNew, &forum.ID, &forum.Slug, &forum.User, &forum.Title, &forum.Posts, &forum.Threads)
 	if err != nil {
 		return
 	}
-
-	err = tx.Commit()
 	return
 }
 
 func (db *databaseManager) GetThreads(slug string, since time.Time, desc bool, limit int) (threads []models.Thread, err error) {
-	tx, err := db.dataBase.Begin()
-	if err != nil {
-		return
-	}
-	defer tx.Rollback()
-
-	rows, err := tx.Query(`SELECT * FROM func_get_threads($1::citext, $2::TIMESTAMP WITH TIME ZONE,
+	rows, err := db.dataBase.Query(`SELECT * FROM func_get_threads($1::citext, $2::TIMESTAMP WITH TIME ZONE,
   		$3::BOOLEAN, $4::INT)`, slug, since, desc, limit)
 	if err != nil {
 		return
@@ -86,18 +72,11 @@ func (db *databaseManager) GetThreads(slug string, since time.Time, desc bool, l
 		err = rows.Err()
 		return
 	}
-	err = tx.Commit()
 	return
 }
 
 func (db *databaseManager) GetUsers(slug string, since string, desc bool, limit int) (users []models.User, err error) {
-	tx, err := db.dataBase.Begin()
-	if err != nil {
-		return
-	}
-	defer tx.Rollback()
-
-	rows, err := tx.Query(`SELECT * FROM func_get_users($1::citext, $2::citext, $3::BOOLEAN, $4::INT)`,
+	rows, err := db.dataBase.Query(`SELECT * FROM func_get_users($1::citext, $2::citext, $3::BOOLEAN, $4::INT)`,
 		slug, since, desc, limit)
 	if err != nil {
 		return
@@ -116,7 +95,5 @@ func (db *databaseManager) GetUsers(slug string, since string, desc bool, limit 
 		err = rows.Err()
 		return
 	}
-
-	err = tx.Commit()
 	return
 }

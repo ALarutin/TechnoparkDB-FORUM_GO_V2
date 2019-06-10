@@ -54,7 +54,7 @@ type Post struct {
 type PostInfo struct {
 	Person *User   `json:"author,omitempty"`
 	Forum  *Forum  `json:"forum,omitempty"`
-	Post   Post    `json:"post"`
+	Post   Post   `json:"post"`
 	Thread *Thread `json:"thread,omitempty"`
 }
 
@@ -63,4 +63,3 @@ type Vote struct {
 	Nickname   string `json:"nickname"`
 	Voice      int    `json:"voice"`
 }
-

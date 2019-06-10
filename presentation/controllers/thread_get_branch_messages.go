@@ -11,6 +11,7 @@ import (
 )
 
 func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
+	//start := time.Now()
 	varMap := mux.Vars(r)
 	slug, found := varMap["slug_or_id"]
 	if !found {
@@ -25,7 +26,11 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		slug = ""
 	}
-
+	//if time.Since(start) > time.Millisecond * 10{
+	//	logger.Info.Print(time.Since(start))
+	//
+	//}
+	//start = time.Now()
 	id, err = database.GetInstance().GetThreadIdBySlug(slug, id)
 	if err != nil {
 		if id == 0 {
@@ -41,6 +46,9 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error.Println(err.Error())
 		return
 	}
+	//if time.Since(start) > time.Millisecond * 10{
+	//	logger.Info.Print(time.Since(start))
+	//}
 
 	limit := r.URL.Query().Get("limit")
 	limitInt, err := strconv.Atoi(limit)
@@ -75,12 +83,23 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 		descBool = false
 	}
 
+	//if time.Since(start) > time.Millisecond * 10{
+	//	logger.Info.Print(time.Since(start))
+	//
+	//}
+	//start = time.Now()
+
 	posts, err := database.GetInstance().GetPosts(id, limitInt, sinceInt, sort, descBool)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		logger.Error.Println(err.Error())
 		return
 	}
+	//if time.Since(start) > time.Millisecond * 10{
+	//	logger.Info.Print(time.Since(start))
+	//
+	//}
+	//start = time.Now()
 
 	w.WriteHeader(http.StatusOK)
 	if len(posts) == 0 {
@@ -100,4 +119,8 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 			logger.Error.Println(err.Error())
 		}
 	}
+	//if time.Since(start) > time.Millisecond * 10{
+	//	logger.Info.Print(time.Since(start))
+	//
+	//}
 }

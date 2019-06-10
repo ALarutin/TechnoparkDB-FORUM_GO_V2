@@ -32,22 +32,33 @@ RUN /etc/init.d/postgresql start &&\
 	psql -d postgres -f database/dump.sql &&\
 	/etc/init.d/postgresql stop
 
-RUN echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/$PGSQLVER/main/pg_hba.conf &&\
-	echo "listen_addresses='*'" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "fsync = off" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "synchronous_commit = off" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "shared_buffers = 256MB" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "work_mem = 51MB" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "maintenance_work_mem = 256MB" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "wal_sync_method = fdatasync" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "commit_delay = 55" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "commit_siblings = 8" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "random_page_cost = 2.0" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "cpu_tuple_cost = 0.001" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "cpu_index_tuple_cost = 0.0005" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "autovacuum = on" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "wal_level = minimal" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
-	echo "max_wal_senders = 0" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf
+#RUN echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/$PGSQLVER/main/pg_hba.conf &&\
+#	echo "listen_addresses='*'" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "fsync = off" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "synchronous_commit = off" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "shared_buffers = 512MB" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "work_mem = 51MB" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "maintenance_work_mem = 256MB" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "wal_sync_method = fdatasync" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "commit_delay = 55" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "commit_siblings = 8" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "random_page_cost = 2.0" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "cpu_tuple_cost = 0.001" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "cpu_index_tuple_cost = 0.0005" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "autovacuum = on" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "wal_level = minimal" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf &&\
+#	echo "max_wal_senders = 0" >> /etc/postgresql/$PGSQLVER/main/postgresql.conf
+
+RUN echo "listen_addresses = '*'" >> /etc/postgresql/10/main/postgresql.conf
+RUN echo "synchronous_commit = off" >> /etc/postgresql/10/main/postgresql.conf
+RUN echo "fsync = off" >> /etc/postgresql/10/main/postgresql.conf
+RUN echo "full_page_writes = off" >> /etc/postgresql/10/main/postgresql.conf
+RUN echo "max_wal_size = 1GB" >> /etc/postgresql/10/main/postgresql.conf
+RUN echo "shared_buffers = 512MB" >> /etc/postgresql/10/main/postgresql.conf
+RUN echo "effective_cache_size = 256MB" >> /etc/postgresql/10/main/postgresql.conf
+RUN echo "work_mem = 64MB" >> /etc/postgresql/10/main/postgresql.conf
+RUN echo "maintenance_work_mem = 128MB" >> /etc/postgresql/10/main/postgresql.conf
+RUN echo "unix_socket_directories = '/var/run/postgresql'" >> /etc/postgresql/10/main/postgresql.conf
 
 EXPOSE 5432
 

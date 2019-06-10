@@ -49,38 +49,22 @@ func (db *databaseManager) CreatePost(posts []models.Post, id int, forum string)
 }
 
 func (db *databaseManager) GetThreadById(threadId int) (thread models.Thread, err error) {
-	tx, err := db.dataBase.Begin()
-	if err != nil {
-		return
-	}
-	defer tx.Rollback()
-
-	row := tx.QueryRow(`SELECT * FROM func_get_thread_by_id($1::INT)`, threadId)
+	row := db.dataBase.QueryRow(`SELECT * FROM func_get_thread_by_id($1::INT)`, threadId)
 	err = row.Scan(&thread.IsNew, &thread.ID, &thread.Slug, &thread.Author, &thread.Forum,
 		&thread.Title, &thread.Message, &thread.Votes, &thread.Created)
 	if err != nil {
 		return
 	}
-
-	err = tx.Commit()
 	return
 }
 
 func (db *databaseManager) GetThreadBySlug(slug string) (thread models.Thread, err error) {
-	tx, err := db.dataBase.Begin()
-	if err != nil {
-		return
-	}
-	defer tx.Rollback()
-
-	row := tx.QueryRow(`SELECT * FROM func_get_thread_by_slug($1::citext)`, slug)
+	row := db.dataBase.QueryRow(`SELECT * FROM func_get_thread_by_slug($1::citext)`, slug)
 	err = row.Scan(&thread.IsNew, &thread.ID, &thread.Slug, &thread.Author, &thread.Forum,
 		&thread.Title, &thread.Message, &thread.Votes, &thread.Created)
 	if err != nil {
 		return
 	}
-
-	err = tx.Commit()
 	return
 }
 
@@ -123,30 +107,16 @@ func (db *databaseManager) CreateOrUpdateVote(vote models.Vote, slug string, thr
 }
 
 func (db *databaseManager) GetThreadIdBySlug(slug string, i int) (id int, err error) {
-	tx, err := db.dataBase.Begin()
-	if err != nil {
-		return
-	}
-	defer tx.Rollback()
-
-	row := tx.QueryRow(`SELECT id FROM public.thread WHERE slug = $1 or id = $2;`, slug, i)
+	row := db.dataBase.QueryRow(`SELECT id FROM public.thread WHERE slug = $1 or id = $2;`, slug, i)
 	err = row.Scan(&id)
 	if err != nil {
 		return
 	}
-
-	err = tx.Commit()
 	return
 }
 
 func (db *databaseManager) GetPosts(id, limit, since int, sort string, desc bool) (posts []models.Post, err error) {
-	tx, err := db.dataBase.Begin()
-	if err != nil {
-		return
-	}
-	defer tx.Rollback()
-
-	rows, err := db.getRowsForGetPosts(tx, id, limit, since, sort, desc)
+	rows, err := db.getRowsForGetPosts(id, limit, since, sort, desc)
 	if err != nil {
 		return
 	}
@@ -165,15 +135,13 @@ func (db *databaseManager) GetPosts(id, limit, since int, sort string, desc bool
 		err = rows.Err()
 		return
 	}
-
-	err = tx.Commit()
 	return
 }
 
-func (db *databaseManager) getRowsForGetPosts(tx *pgx.Tx, id, limit, since int, sort string, desc bool) (rows *pgx.Rows, err error) {
+func (db *databaseManager) getRowsForGetPosts(id, limit, since int, sort string, desc bool) (rows *pgx.Rows, err error) {
 	switch sort {
 	case "flat":
-		rows, err = tx.Query(
+		rows, err = db.dataBase.Query(
 			`SELECT id, author, thread, forum, message, is_edited, parent, created 
 					FROM func_get_posts_flat($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
 			id, limit, since, desc)
@@ -181,7 +149,7 @@ func (db *databaseManager) getRowsForGetPosts(tx *pgx.Tx, id, limit, since int, 
 			return
 		}
 	case "tree":
-		rows, err = tx.Query(
+		rows, err = db.dataBase.Query(
 			`SELECT id, author, thread, forum, message, is_edited, parent, created
 					FROM func_get_posts_tree($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
 			id, limit, since, desc)
@@ -189,7 +157,7 @@ func (db *databaseManager) getRowsForGetPosts(tx *pgx.Tx, id, limit, since int, 
 			return
 		}
 	case "parent_tree":
-		rows, err = tx.Query(
+		rows, err = db.dataBase.Query(
 			`SELECT id, author, thread, forum, message, is_edited, parent, created
 					FROM func_get_posts_parent_tree($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
 			id, limit, since, desc)
@@ -197,7 +165,7 @@ func (db *databaseManager) getRowsForGetPosts(tx *pgx.Tx, id, limit, since int, 
 			return
 		}
 	default:
-		rows, err = tx.Query(
+		rows, err = db.dataBase.Query(
 			`SELECT id, author, thread, forum, message, is_edited, parent, created
 					FROM func_get_posts($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
 			id, limit, since, desc)

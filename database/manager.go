@@ -9,8 +9,8 @@ import (
 )
 
 const (
-	maxConnections = 100
-	acquireTimeout = 5 * time.Second
+	maxConnections = 200
+	acquireTimeout = time.Second
 )
 
 func loadConfiguration() (pgxConfig pgx.ConnConfig) {

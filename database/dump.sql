@@ -88,7 +88,8 @@ CREATE TABLE public.post
     is_edited BOOLEAN                  DEFAULT FALSE             NOT NULL,
     parent    INT                                                NOT NULL,
     created   TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    post_path INT[]                    DEFAULT '{}'::INT[]
+    post_path INT[]                    DEFAULT '{}'::INT[],
+    rootId    INT
 );
 
 ALTER TABLE public.post
@@ -211,7 +212,8 @@ BEGIN
     WHERE id = NEW.parent;
     arg_post_path = arg_post_path || ARRAY [New.id];
     UPDATE public.post
-    SET post_path = arg_post_path
+    SET post_path = arg_post_path,
+        rootId    = arg_post_path[2]
     WHERE id = NEW.id;
     RETURN NULL;
 END;
@@ -872,7 +874,7 @@ BEGIN
                              END
                    END
                ORDER BY (CASE WHEN arg_desc THEN id END) DESC,
-                        (CASE WHEN NOT arg_desc THEN id END) ASC
+                        (CASE WHEN NOT arg_desc THEN id END)
                LIMIT arg_limit
         LOOP
             result.id := rec.id;
@@ -906,7 +908,7 @@ BEGIN
                          WHEN arg_desc THEN post_path < (SELECT post_path FROM public.post WHERE id = arg_since)
                          ELSE post_path > (SELECT post_path FROM public.post WHERE id = arg_since) END
                ORDER BY (CASE WHEN arg_desc THEN post_path END) DESC,
-                        (CASE WHEN NOT arg_desc THEN post_path END) ASC
+                        (CASE WHEN NOT arg_desc THEN post_path END)
                LIMIT arg_limit
         LOOP
             result.id := rec.id;
@@ -935,27 +937,24 @@ DECLARE
     rec    RECORD;
 BEGIN
     FOR rec IN
-        WITH paths AS (SELECT post_path as path
-                       FROM public.post
-                       WHERE thread = arg_id
-                         AND CASE
-                                 WHEN arg_since = 0 THEN TRUE
-                                 WHEN arg_desc THEN post_path[2] <
-                                                    (SELECT post_path[2] FROM public.post WHERE id = arg_since)
-                                 ELSE post_path[2] > (SELECT post_path[2] FROM public.post WHERE id = arg_since) END)
         SELECT *
         FROM public.post
         WHERE thread = arg_id
-          AND post_path[2] IN (SELECT id
-                               FROM public.post
-                               WHERE thread = arg_id
-                                 AND post_path IN (SELECT path FROM paths)
-                                 AND parent = 0
-                               ORDER BY (CASE WHEN arg_desc THEN id END) DESC,
-                                        (CASE WHEN NOT arg_desc THEN id END) ASC
-                               LIMIT arg_limit)
-        ORDER BY (CASE WHEN arg_desc THEN post_path[2] END) DESC, post_path,
-                 (CASE WHEN NOT arg_desc THEN post_path[2] END) ASC, post_path
+          AND rootId IN
+              (SELECT id
+               FROM public.post
+               WHERE thread = arg_id
+                 AND parent = 0
+                 AND CASE
+                         WHEN arg_since = 0 THEN TRUE
+                         WHEN arg_desc THEN id < (SELECT rootId FROM public.post WHERE id = arg_since)
+                         ELSE id > (SELECT rootId FROM public.post WHERE id = arg_since)
+                   END
+               ORDER BY (CASE WHEN arg_desc THEN id END) DESC,
+                        (CASE WHEN NOT arg_desc THEN id END)
+               LIMIT arg_limit)
+        ORDER BY (CASE WHEN arg_desc THEN rootId END) DESC, post_path,
+                 (CASE WHEN NOT arg_desc THEN rootId END), post_path
         LOOP
             result.id := rec.id;
             result.author := rec.author;
@@ -980,8 +979,6 @@ $BODY$
 
 SELECT *
 FROM func_add_admin();
-
--- CREATE INDEX IF NOT EXISTS post_idx ON public.post USING btree (thread, parent, id) WHERE (parent <> 0);
 --
 -- CREATE INDEX IF NOT EXISTS post_idx ON public.post USING btree (id);
 --
@@ -1017,37 +1014,36 @@ FROM func_add_admin();
 --
 -- CREATE INDEX IF NOT EXISTS person_nickname_idx ON public.person USING btree (nickname);
 
-CREATE INDEX forum_id_idx ON public.forum USING btree (id);
+CREATE INDEX IF NOT EXISTS forum_slug_id_idx ON public.forum USING btree (slug, id);
 
-CREATE INDEX forum_slug_idx ON public.forum USING btree (slug);
+CREATE INDEX IF NOT EXISTS forum_slug_idx ON public.forum USING btree (slug);
 
-CREATE INDEX post_id_idx ON public.post USING btree (id);
+CREATE INDEX IF NOT EXISTS post_id_idx ON public.post USING btree (id);
 
-CREATE INDEX post_author_idx ON public.post USING btree (author);
+CREATE INDEX IF NOT EXISTS post_thread_id_idx ON public.post USING btree (thread, id);
 
-CREATE INDEX post_forum_idx ON public.post USING btree (forum);
+CREATE INDEX IF NOT EXISTS post_thread_parent_id_idx ON public.post USING btree (thread, parent, id);
 
-CREATE INDEX post_rating_idx ON public.post USING btree (post_path);
+CREATE INDEX IF NOT EXISTS post_thread_post_path_idx ON public.post USING btree (thread, post_path);
 
-CREATE INDEX post_thread_idx ON public.post USING btree (thread);
+CREATE INDEX IF NOT EXISTS post_thread_post_path_parent_idx ON public.post USING btree (thread, post_path, parent);
 
-CREATE INDEX post_thread_id_idx ON public.post USING btree (thread, id);
+CREATE INDEX IF NOT EXISTS post_post_path_idx ON public.post USING btree (post_path);
 
-CREATE INDEX thread_author_idx ON public.thread USING btree (author);
+CREATE INDEX IF NOT EXISTS post_rootId_post_path_idx ON public.post USING btree (rootId, post_path);
 
-CREATE INDEX thread_slug_idx ON public.thread USING btree (slug) WHERE (slug IS NOT NULL);
+CREATE INDEX IF NOT EXISTS thread_slug_idx ON public.thread USING btree (slug, id) WHERE (slug IS NOT NULL);
 
-CREATE INDEX thread_created_idx ON public.thread USING btree (created);
+CREATE INDEX IF NOT EXISTS thread_id_idx ON public.thread USING btree (id);
 
-CREATE INDEX thread_id_idx ON public.thread USING btree (id);
+CREATE INDEX IF NOT EXISTS thread_forum_idx ON public.thread USING btree (id, forum, created);
 
-CREATE INDEX thread_forum_idx ON public.thread USING btree (forum);
+CREATE INDEX IF NOT EXISTS person_id_nickname_email_idx ON public.person USING btree (id, nickname, email);
 
-CREATE INDEX person_email_idx ON public.person USING btree (email);
+CREATE INDEX IF NOT EXISTS person_nickname_idx ON public.person USING btree (nickname);
 
-CREATE INDEX person_nickname_idx ON public.person USING btree (nickname);
+CREATE INDEX IF NOT EXISTS forum_users_user_nickname_idx ON public.forum_users USING btree (user_nickname, forum_slug);
 
-CREATE INDEX forum_users_user_nickname_idx ON public.forum_users USING btree (user_nickname);
+CREATE INDEX IF NOT EXISTS vote_thread_author_idx ON public.vote USING btree (thread_id, user_nickname);
 
-CREATE INDEX forum_users_forum_slug_idx ON public.forum_users USING btree (forum_slug);
 
