@@ -680,7 +680,7 @@ CREATE OR REPLACE FUNCTION func_create_post(arg_author citext, arg_id INT, arg_m
 AS
 $BODY$
 DECLARE
-    result          public.type_post;
+    result public.type_post;
 BEGIN
     INSERT INTO public.post(author, thread, forum, message, parent, created)
     VALUES (arg_author, arg_id, arg_forum, arg_message, arg_parent, arg_created) RETURNING *
@@ -815,31 +815,23 @@ END;
 $BODY$
     LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION func_get_posts(arg_slug citext, arg_id INT, arg_limit INT, arg_since INT,
+CREATE OR REPLACE FUNCTION func_get_posts(arg_id INT, arg_limit INT, arg_since INT,
                                           arg_desc BOOLEAN)
     RETURNS SETOF public.type_post
 AS
 $BODY$
 DECLARE
-    result        public.type_post;
-    arg_thread_id INT;
-    rec           RECORD;
+    result public.type_post;
+    rec    RECORD;
 BEGIN
-    SELECT id
-    INTO arg_thread_id
-    FROM public.thread
-    WHERE slug = arg_slug
-       OR id = arg_id;
-    IF NOT FOUND THEN
-        RAISE no_data_found;
-    END IF;
     FOR rec IN SELECT *
                FROM public.post
-               WHERE thread = arg_thread_id
+               WHERE thread = arg_id
                  AND CASE
-                         WHEN arg_since = '0' THEN TRUE
+                         WHEN arg_since = 0 THEN TRUE
                          WHEN arg_desc THEN id < arg_since
-                         ELSE id > arg_since END
+                         ELSE id > arg_since
+                   END
                ORDER BY (CASE WHEN arg_desc THEN created END) DESC,
                         (CASE WHEN NOT arg_desc THEN created END) ASC,
                         (CASE WHEN arg_desc THEN id END) DESC,
@@ -860,38 +852,27 @@ END;
 $BODY$
     LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION func_get_posts_flat(arg_slug citext, arg_id INT, arg_limit INT, arg_since INT,
+CREATE OR REPLACE FUNCTION func_get_posts_flat(arg_id INT, arg_limit INT, arg_since INT,
                                                arg_desc BOOLEAN)
     RETURNS SETOF public.type_post
 AS
 $BODY$
 DECLARE
-    result        public.type_post;
-    arg_thread_id INT;
-    rec           RECORD;
+    result public.type_post;
+    rec    RECORD;
 BEGIN
-    SELECT id
-    INTO arg_thread_id
-    FROM public.thread
-    WHERE slug = arg_slug
-       OR id = arg_id;
-    IF NOT FOUND THEN
-        RAISE no_data_found;
-    END IF;
     FOR rec IN SELECT *
-               FROM public.post AS ps
-                        JOIN public.person AS pr ON pr.nickname = ps.author
-                        JOIN public.forum AS f ON f.slug = ps.forum
-               WHERE ps.thread = arg_thread_id
+               FROM public.post
+               WHERE thread = arg_id
                  AND CASE
                          WHEN arg_since = 0 THEN TRUE
                          ELSE CASE
-                                  WHEN arg_desc THEN ps.id < arg_since
-                                  ELSE ps.id > arg_since
+                                  WHEN arg_desc THEN id < arg_since
+                                  ELSE id > arg_since
                              END
                    END
-               ORDER BY (CASE WHEN arg_desc THEN ps.id END) DESC,
-                        (CASE WHEN NOT arg_desc THEN ps.id END) ASC
+               ORDER BY (CASE WHEN arg_desc THEN id END) DESC,
+                        (CASE WHEN NOT arg_desc THEN id END) ASC
                LIMIT arg_limit
         LOOP
             result.id := rec.id;
@@ -908,33 +889,22 @@ END;
 $BODY$
     LANGUAGE plpgsql;
 
-CREATE OR REPLACE FUNCTION func_get_posts_tree(arg_slug citext, arg_id INT, arg_limit INT, arg_since INT,
+CREATE OR REPLACE FUNCTION func_get_posts_tree(arg_id INT, arg_limit INT, arg_since INT,
                                                arg_desc BOOLEAN)
     RETURNS SETOF public.type_post
 AS
 $BODY$
 DECLARE
-    result        public.type_post;
-    arg_thread_id INT;
-    root_path     INT[];
-    rec           RECORD;
+    result public.type_post;
+    rec    RECORD;
 BEGIN
-    SELECT id
-    INTO arg_thread_id
-    FROM public.thread
-    WHERE slug = arg_slug
-       OR id = arg_id;
-    IF NOT FOUND THEN
-        RAISE no_data_found;
-    END IF;
-    SELECT post_path INTO root_path FROM public.post WHERE id = arg_since;
     FOR rec IN SELECT *
                FROM public.post
-               WHERE thread = arg_thread_id
+               WHERE thread = arg_id
                  AND CASE
-                         WHEN arg_since = '0' THEN TRUE
-                         WHEN arg_desc THEN post_path < root_path
-                         ELSE post_path > root_path END
+                         WHEN arg_since = 0 THEN TRUE
+                         WHEN arg_desc THEN post_path < (SELECT post_path FROM public.post WHERE id = arg_since)
+                         ELSE post_path > (SELECT post_path FROM public.post WHERE id = arg_since) END
                ORDER BY (CASE WHEN arg_desc THEN post_path END) DESC,
                         (CASE WHEN NOT arg_desc THEN post_path END) ASC
                LIMIT arg_limit
@@ -955,39 +925,30 @@ $BODY$
     LANGUAGE plpgsql;
 
 
-CREATE OR REPLACE FUNCTION func_get_posts_parent_tree(arg_slug citext, arg_id INT, arg_limit INT, arg_since INT,
+CREATE OR REPLACE FUNCTION func_get_posts_parent_tree(arg_id INT, arg_limit INT, arg_since INT,
                                                       arg_desc BOOLEAN)
     RETURNS SETOF public.type_post
 AS
 $BODY$
 DECLARE
-    result        public.type_post;
-    arg_thread_id INT;
-    rec           RECORD;
+    result public.type_post;
+    rec    RECORD;
 BEGIN
-    SELECT id
-    INTO arg_thread_id
-    FROM public.thread
-    WHERE slug = arg_slug
-       OR id = arg_id;
-    IF NOT FOUND THEN
-        RAISE no_data_found;
-    END IF;
     FOR rec IN
         WITH paths AS (SELECT post_path as path
                        FROM public.post
-                       WHERE thread = arg_thread_id
+                       WHERE thread = arg_id
                          AND CASE
-                                 WHEN arg_since = '0' THEN TRUE
+                                 WHEN arg_since = 0 THEN TRUE
                                  WHEN arg_desc THEN post_path[2] <
                                                     (SELECT post_path[2] FROM public.post WHERE id = arg_since)
                                  ELSE post_path[2] > (SELECT post_path[2] FROM public.post WHERE id = arg_since) END)
         SELECT *
         FROM public.post
-        WHERE thread = arg_thread_id
+        WHERE thread = arg_id
           AND post_path[2] IN (SELECT id
                                FROM public.post
-                               WHERE thread = arg_thread_id
+                               WHERE thread = arg_id
                                  AND post_path IN (SELECT path FROM paths)
                                  AND parent = 0
                                ORDER BY (CASE WHEN arg_desc THEN id END) DESC,
@@ -1007,7 +968,7 @@ BEGIN
             result.post_path := rec.post_path;
             RETURN next result;
         END LOOP;
-END;
+END ;
 $BODY$
     LANGUAGE plpgsql;
 
@@ -1020,33 +981,73 @@ $BODY$
 SELECT *
 FROM func_add_admin();
 
-CREATE INDEX IF NOT EXISTS post_idx ON public.post USING btree (thread, parent, id) WHERE (parent <> 0);
+-- CREATE INDEX IF NOT EXISTS post_idx ON public.post USING btree (thread, parent, id) WHERE (parent <> 0);
+--
+-- CREATE INDEX IF NOT EXISTS post_idx ON public.post USING btree (id);
+--
+-- CREATE INDEX IF NOT EXISTS post_rating_idx ON public.post USING btree (post_path);
+--
+-- CREATE INDEX IF NOT EXISTS post_rating_d_idx ON public.post USING btree (post_path DESC);
+--
+-- CREATE INDEX IF NOT EXISTS post_thread_idx ON public.post USING btree (thread);
+--
+-- CREATE INDEX IF NOT EXISTS post_author_idx ON public.post USING btree (author);
+--
+-- CREATE INDEX IF NOT EXISTS post_created_idx ON public.post USING btree (created);
+--
+-- CREATE INDEX IF NOT EXISTS post_created_d_idx ON public.post USING btree (created DESC);
+--
+-- CREATE INDEX IF NOT EXISTS thread_forum_idx ON public.thread USING btree (forum);
+--
+-- CREATE INDEX IF NOT EXISTS thread_author_idx ON public.thread USING btree (author);
+--
+-- CREATE INDEX IF NOT EXISTS thread_slug_idx ON public.thread USING btree (slug);
+--
+-- CREATE INDEX IF NOT EXISTS thread_idx ON public.thread USING btree (id);
+--
+-- CREATE INDEX IF NOT EXISTS forum_author_idx ON public.forum USING btree (author);
+--
+-- CREATE INDEX IF NOT EXISTS forum_id_idx ON public.forum USING btree (id);
+--
+-- CREATE INDEX IF NOT EXISTS forum_users_user_nickname_idx ON public.forum_users USING btree (user_nickname);
+--
+-- CREATE INDEX IF NOT EXISTS forum_users_forum_slug_idx ON public.forum_users USING btree (forum_slug);
+--
+-- CREATE INDEX IF NOT EXISTS person_id_idx ON public.person USING btree (id);
+--
+-- CREATE INDEX IF NOT EXISTS person_nickname_idx ON public.person USING btree (nickname);
 
-CREATE INDEX IF NOT EXISTS post_rating_idx ON public.post USING btree (post_path);
+CREATE INDEX forum_id_idx ON public.forum USING btree (id);
 
-CREATE INDEX IF NOT EXISTS post_thread_idx ON public.post USING btree (thread, id);
+CREATE INDEX forum_slug_idx ON public.forum USING btree (slug);
 
-CREATE INDEX IF NOT EXISTS post_created_idx ON public.post USING btree (created);
+CREATE INDEX post_id_idx ON public.post USING btree (id);
 
-CREATE INDEX IF NOT EXISTS thread_forum_idx ON public.thread USING btree (forum);
+CREATE INDEX post_author_idx ON public.post USING btree (author);
 
-CREATE INDEX IF NOT EXISTS thread_author_idx ON public.thread USING btree (author);
+CREATE INDEX post_forum_idx ON public.post USING btree (forum);
 
-CREATE INDEX IF NOT EXISTS thread_slug_idx ON public.thread USING btree (slug);
+CREATE INDEX post_rating_idx ON public.post USING btree (post_path);
 
-CREATE INDEX IF NOT EXISTS thread_idx ON public.thread USING btree (id);
+CREATE INDEX post_thread_idx ON public.post USING btree (thread);
 
-CREATE INDEX IF NOT EXISTS forum_author_idx ON public.forum USING btree (author);
+CREATE INDEX post_thread_id_idx ON public.post USING btree (thread, id);
 
-CREATE INDEX IF NOT EXISTS forum_id_idx ON public.forum USING btree (id);
+CREATE INDEX thread_author_idx ON public.thread USING btree (author);
 
-CREATE INDEX IF NOT EXISTS forum_users_user_nickname_idx ON public.forum_users USING btree (user_nickname);
+CREATE INDEX thread_slug_idx ON public.thread USING btree (slug) WHERE (slug IS NOT NULL);
 
-CREATE INDEX IF NOT EXISTS forum_users_forum_slug_idx ON public.forum_users USING btree (forum_slug);
+CREATE INDEX thread_created_idx ON public.thread USING btree (created);
 
-CREATE INDEX IF NOT EXISTS person_id_idx ON public.person USING btree (id);
+CREATE INDEX thread_id_idx ON public.thread USING btree (id);
 
-CREATE INDEX IF NOT EXISTS person_nickname_idx ON public.person USING btree (nickname);
+CREATE INDEX thread_forum_idx ON public.thread USING btree (forum);
 
+CREATE INDEX person_email_idx ON public.person USING btree (email);
 
+CREATE INDEX person_nickname_idx ON public.person USING btree (nickname);
+
+CREATE INDEX forum_users_user_nickname_idx ON public.forum_users USING btree (user_nickname);
+
+CREATE INDEX forum_users_forum_slug_idx ON public.forum_users USING btree (forum_slug);
 

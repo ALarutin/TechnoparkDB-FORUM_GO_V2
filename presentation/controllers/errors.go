@@ -3,7 +3,9 @@ package controllers
 const (
 	messageCantFind      = `message": "cant find `
 	cantFindUser         = `user with nickname `
-	cantFindThread       = `thread with slug or id `
+	cantFindThread       = `thread with slu or id `
+	cantFindThreadId     = `thread with id `
+	cantFindThreadSlug   = `thread with slug `
 	cantFindForum        = `forum with slug `
 	cantFindParentOrUser = `parent or parent in another thread`
 	cantFindPost         = `post with id `

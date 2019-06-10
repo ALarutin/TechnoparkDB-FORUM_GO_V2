@@ -15,9 +15,9 @@ const (
 
 func loadConfiguration() (pgxConfig pgx.ConnConfig) {
 	pgxConfig.Host = "localhost"
-	pgxConfig.User = "mac"
+	pgxConfig.User = "postgres"
 	pgxConfig.Password = "1209qawsed"
-	pgxConfig.Database = "postgres"
+	pgxConfig.Database = "postgres_perf"
 	pgxConfig.Port = 5432
 	return
 }

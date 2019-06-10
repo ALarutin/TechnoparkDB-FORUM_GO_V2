@@ -26,6 +26,22 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 		slug = ""
 	}
 
+	id, err = database.GetInstance().GetThreadIdBySlug(slug, id)
+	if err != nil {
+		if id == 0 {
+			myJSON := fmt.Sprintf(`{"%s%s%s"}`, messageCantFind, cantFindThreadSlug, slug)
+			w.WriteHeader(http.StatusNotFound)
+			_, err = w.Write([]byte(myJSON))
+			if err != nil {
+				logger.Error.Println(err.Error())
+			}
+			return
+		}
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Error.Println(err.Error())
+		return
+	}
+
 	limit := r.URL.Query().Get("limit")
 	limitInt, err := strconv.Atoi(limit)
 	if err != nil {
@@ -59,17 +75,8 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 		descBool = false
 	}
 
-	posts, err := database.GetInstance().GetPosts(slug, id, limitInt, sinceInt, sort, descBool)
+	posts, err := database.GetInstance().GetPosts(id, limitInt, sinceInt, sort, descBool)
 	if err != nil {
-		if err.Error() == errorPqNoDataFound {
-			myJSON := fmt.Sprintf(`{"%s%s%s/%d"}`, messageCantFind, cantFindThread, slug, id)
-			w.WriteHeader(http.StatusNotFound)
-			_, err = w.Write([]byte(myJSON))
-			if err != nil {
-				logger.Error.Println(err.Error())
-			}
-			return
-		}
 		w.WriteHeader(http.StatusInternalServerError)
 		logger.Error.Println(err.Error())
 		return
