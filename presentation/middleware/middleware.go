@@ -17,7 +17,7 @@ func Logger(this http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 		this.ServeHTTP(w, r)
-		if time.Since(start) > time.Microsecond * 10000 {
+		if time.Since(start) > time.Microsecond * 100000 {
 			logger.Info.Printf("\nmethod: [%s]\naddr: %s\nparams: %s\npath: %s\nwork time: %s\n",
 				r.Method, r.RemoteAddr, r.URL.RawQuery, r.URL.Path, time.Since(start))
 		}
