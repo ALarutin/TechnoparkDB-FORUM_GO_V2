@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"github.com/gorilla/mux"
 	"net/http"
-	"strconv"
-	"time"
 )
 
 func GetThreadsHandler(w http.ResponseWriter, r *http.Request) {
@@ -21,42 +19,31 @@ func GetThreadsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	limit := r.URL.Query().Get("limit")
-	limitInt, err := strconv.Atoi(limit)
+	forum, err := database.GetInstance().GetForum(slug)
 	if err != nil {
-		if err.Error() == `strconv.Atoi: parsing "": invalid syntax` {
-			limitInt = 100
-		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-			logger.Error.Println(err.Error())
-			return
-		}
-	}
-
-	since, err := time.Parse(time.RFC3339, r.URL.Query().Get("since"))
-	if err != nil {
-		since = time.Time{}
-	}
-
-	desc := r.URL.Query().Get("desc")
-	var descBool bool
-	if desc == "true" {
-		descBool = true
-	} else if desc == "false" {
-		descBool = false
-	}
-
-	threads, err := database.GetInstance().GetThreads(slug, since, descBool, limitInt)
-	if err != nil {
-		if err.Error() == errorPqNoDataFound {
+		if forum.ID == 0 {
 			myJSON := fmt.Sprintf(`{"%s%s%s"}`, messageCantFind, cantFindForum, slug)
 			w.WriteHeader(http.StatusNotFound)
-			_, err := w.Write([]byte(myJSON))
+			_, err = w.Write([]byte(myJSON))
 			if err != nil {
 				logger.Error.Println(err.Error())
 			}
 			return
 		}
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Error.Println(err.Error())
+		return
+	}
+
+	limit := r.URL.Query().Get("limit")
+	if limit == "" {
+		limit = "100"
+	}
+	since := r.URL.Query().Get("since")
+	desc := r.URL.Query().Get("desc")
+
+	threads, err := database.GetInstance().GetThreads(slug, since, desc, limit)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		logger.Error.Println(err.Error())
 		return

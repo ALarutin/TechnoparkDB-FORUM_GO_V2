@@ -11,7 +11,6 @@ import (
 )
 
 func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
-	//start := time.Now()
 	varMap := mux.Vars(r)
 	slug, found := varMap["slug_or_id"]
 	if !found {
@@ -26,11 +25,7 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	} else {
 		slug = ""
 	}
-	//if time.Since(start) > time.Millisecond * 10{
-	//	logger.Info.Print(time.Since(start))
-	//
-	//}
-	//start = time.Now()
+
 	id, err = database.GetInstance().GetThreadIdBySlug(slug, id)
 	if err != nil {
 		if id == 0 {
@@ -46,42 +41,18 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error.Println(err.Error())
 		return
 	}
-	//if time.Since(start) > time.Millisecond * 10{
-	//	logger.Info.Print(time.Since(start))
-	//}
 
 	limit := r.URL.Query().Get("limit")
-	limitInt, err := strconv.Atoi(limit)
-	if err != nil {
-		if err.Error() == `strconv.Atoi: parsing "": invalid syntax` {
-			limitInt = 100
-		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-			logger.Error.Println(err.Error())
-			return
-		}
+	if limit == "" {
+		limit = "100"
 	}
 
 	since := r.URL.Query().Get("since")
-	sinceInt, err := strconv.Atoi(since)
-	if err != nil {
-		if err.Error() == `strconv.Atoi: parsing "": invalid syntax` {
-			sinceInt = 0
-		} else {
-			w.WriteHeader(http.StatusInternalServerError)
-			logger.Error.Println(err.Error())
-			return
-		}
-	}
+
+
 
 	sort := r.URL.Query().Get("sort")
 	desc := r.URL.Query().Get("desc")
-	var descBool bool
-	if desc == "true" {
-		descBool = true
-	} else if desc == "false" {
-		descBool = false
-	}
 
 	//if time.Since(start) > time.Millisecond * 10{
 	//	logger.Info.Print(time.Since(start))
@@ -89,7 +60,7 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	//}
 	//start = time.Now()
 
-	posts, err := database.GetInstance().GetPosts(id, limitInt, sinceInt, sort, descBool)
+	posts, err := database.GetInstance().GetPosts(id, limit, since, sort, desc)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		logger.Error.Println(err.Error())

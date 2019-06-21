@@ -116,7 +116,7 @@ func (db *databaseManager) GetThreadIdBySlug(slug string, i int) (id int, err er
 	return
 }
 
-func (db *databaseManager) GetPosts(id, limit, since int, sort string, desc bool) (posts []models.Post, err error) {
+func (db *databaseManager) GetPosts(id int, limit, since, sort, desc string) (posts []models.Post, err error) {
 	rows, err := db.getRowsForGetPosts(id, limit, since, sort, desc)
 	if err != nil {
 		return
@@ -139,40 +139,114 @@ func (db *databaseManager) GetPosts(id, limit, since int, sort string, desc bool
 	return
 }
 
-func (db *databaseManager) getRowsForGetPosts(id, limit, since int, sort string, desc bool) (rows *pgx.Rows, err error) {
+func (db *databaseManager) getRowsForGetPosts(id int, limit, since, sort, desc string) (rows *pgx.Rows, err error) {
+	str := `SELECT id, author, thread, forum, message, is_edited, parent, created
+			FROM public.post WHERE thread = $1 `
+
 	switch sort {
 	case "flat":
-		rows, err = db.dataBase.Query(
-			`SELECT id, author, thread, forum, message, is_edited, parent, created 
-					FROM func_get_posts_flat($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
-			id, limit, since, desc)
-		if err != nil {
-			return
+		if since != "" {
+			if desc == "true" {
+				str += `AND id < ` + since + ` `
+			} else {
+				str += `AND id > ` + since + ` `
+			}
 		}
+		str += `ORDER BY id `
+		if desc == "true" {
+			str += `DESC `
+		}
+		str += `Limit ` + limit
 	case "tree":
-		rows, err = db.dataBase.Query(
-			`SELECT id, author, thread, forum, message, is_edited, parent, created
-					FROM func_get_posts_tree($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
-			id, limit, since, desc)
-		if err != nil {
-			return
+		if since != "" {
+			if desc == "true" {
+				str += `AND post_path < (SELECT post_path FROM public.post WHERE id = ` + since + `) `
+			} else {
+				str += `AND post_path > (SELECT post_path FROM public.post WHERE id = ` + since + `) `
+			}
 		}
+		str += `ORDER BY post_path `
+		if desc == "true" {
+			str += `DESC `
+		}
+		str += `Limit ` + limit
 	case "parent_tree":
-		rows, err = db.dataBase.Query(
-			`SELECT id, author, thread, forum, message, is_edited, parent, created
-					FROM func_get_posts_parent_tree($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
-			id, limit, since, desc)
-		if err != nil {
-			return
+		str += `AND rootid IN (SELECT id FROM public.post
+				WHERE thread = $1 AND parent = 0 `
+		if since != "" {
+			if desc == "true" {
+				str += `AND id < (SELECT rootid FROM public.post WHERE id = ` + since + `) `
+			} else {
+				str += `AND id > (SELECT rootid FROM public.post WHERE id = ` + since + `) `
+			}
 		}
+		str += `ORDER BY id `
+		if desc == "true" {
+			str += `DESC `
+		}
+		str += `Limit ` + limit + `) `
+		str += `ORDER BY rootid `
+		if desc == "true" {
+			str += `DESC`
+		}
+		str += `, post_path`
 	default:
-		rows, err = db.dataBase.Query(
-			`SELECT id, author, thread, forum, message, is_edited, parent, created
-					FROM func_get_posts($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
-			id, limit, since, desc)
-		if err != nil {
-			return
+		if since != "" {
+			if desc == "true" {
+				str += `AND id < ` + since + ` `
+			} else {
+				str += `AND id > ` + since + ` `
+			}
 		}
+		str += `ORDER BY created `
+		if desc == "true" {
+			str += `DESC `
+		}
+		str += `,id `
+		if desc == "true" {
+			str += `DESC `
+		}
+		str += `Limit ` + limit
 	}
+
+	rows, err = db.dataBase.Query(str, id)
+	if err != nil {
+		return
+	}
+
+	//switch sort {
+	//case "flat":
+	//	rows, err = db.dataBase.Query(
+	//		`SELECT id, author, thread, forum, message, is_edited, parent, created
+	//				FROM func_get_posts_flat($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
+	//		id, limit, since, desc)
+	//	if err != nil {
+	//		return
+	//	}
+	//case "tree":
+	//	rows, err = db.dataBase.Query(
+	//		`SELECT id, author, thread, forum, message, is_edited, parent, created
+	//				FROM func_get_posts_tree($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
+	//		id, limit, since, desc)
+	//	if err != nil {
+	//		return
+	//	}
+	//case "parent_tree":
+	//	rows, err = db.dataBase.Query(
+	//		`SELECT id, author, thread, forum, message, is_edited, parent, created
+	//				FROM func_get_posts_parent_tree($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
+	//		id, limit, since, desc)
+	//	if err != nil {
+	//		return
+	//	}
+	//default:
+	//	rows, err = db.dataBase.Query(
+	//		`SELECT id, author, thread, forum, message, is_edited, parent, created
+	//				FROM func_get_posts($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
+	//		id, limit, since, desc)
+	//	if err != nil {
+	//		return
+	//	}
+	//}
 	return
 }

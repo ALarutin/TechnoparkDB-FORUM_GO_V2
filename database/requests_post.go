@@ -43,7 +43,7 @@ func (db *databaseManager) GetPostInfo(id int, related []string) (postInfo model
 		err = row.Scan(&post.ID, &post.Author, &post.Thread, &post.Forum,
 			&post.Message, &post.IsEdited, &post.Parent, &post.Created)
 		postInfo.Post = post
-	} else if related[0] == "user" {
+	} else if related[0] == user {
 		if len(related) == 1 {
 			str :=
 				`SELECT
@@ -60,7 +60,7 @@ func (db *databaseManager) GetPostInfo(id int, related []string) (postInfo model
 			postInfo.Post = post
 			postInfo.Person = &user
 		} else if len(related) == 2 {
-			if related[1] == "forum"{
+			if related[1] == forum {
 				str :=
 					`SELECT
 				p.id, p.author, p.thread, p.forum, p.message, p.is_edited, p.parent, p.created,
@@ -127,7 +127,7 @@ func (db *databaseManager) GetPostInfo(id int, related []string) (postInfo model
 			postInfo.Thread = &thread
 			postInfo.Forum = &forum
 		}
-	} else if related[0] == "thread" {
+	} else if related[0] == thread {
 		if len(related) == 1 {
 			str :=
 				`SELECT

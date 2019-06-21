@@ -979,46 +979,12 @@ $BODY$
 
 SELECT *
 FROM func_add_admin();
---
--- CREATE INDEX IF NOT EXISTS post_idx ON public.post USING btree (id);
---
--- CREATE INDEX IF NOT EXISTS post_rating_idx ON public.post USING btree (post_path);
---
--- CREATE INDEX IF NOT EXISTS post_rating_d_idx ON public.post USING btree (post_path DESC);
---
--- CREATE INDEX IF NOT EXISTS post_thread_idx ON public.post USING btree (thread);
---
--- CREATE INDEX IF NOT EXISTS post_author_idx ON public.post USING btree (author);
---
--- CREATE INDEX IF NOT EXISTS post_created_idx ON public.post USING btree (created);
---
--- CREATE INDEX IF NOT EXISTS post_created_d_idx ON public.post USING btree (created DESC);
---
--- CREATE INDEX IF NOT EXISTS thread_forum_idx ON public.thread USING btree (forum);
---
--- CREATE INDEX IF NOT EXISTS thread_author_idx ON public.thread USING btree (author);
---
--- CREATE INDEX IF NOT EXISTS thread_slug_idx ON public.thread USING btree (slug);
---
--- CREATE INDEX IF NOT EXISTS thread_idx ON public.thread USING btree (id);
---
--- CREATE INDEX IF NOT EXISTS forum_author_idx ON public.forum USING btree (author);
---
--- CREATE INDEX IF NOT EXISTS forum_id_idx ON public.forum USING btree (id);
---
--- CREATE INDEX IF NOT EXISTS forum_users_user_nickname_idx ON public.forum_users USING btree (user_nickname);
---
--- CREATE INDEX IF NOT EXISTS forum_users_forum_slug_idx ON public.forum_users USING btree (forum_slug);
---
--- CREATE INDEX IF NOT EXISTS person_id_idx ON public.person USING btree (id);
---
--- CREATE INDEX IF NOT EXISTS person_nickname_idx ON public.person USING btree (nickname);
 
 CREATE INDEX IF NOT EXISTS forum_slug_id_idx ON public.forum USING btree (slug, id);
 
-CREATE INDEX IF NOT EXISTS forum_slug_idx ON public.forum USING btree (slug);
+CREATE UNIQUE INDEX IF NOT EXISTS forum_slug_idx ON public.forum USING btree (slug);
 
-CREATE INDEX IF NOT EXISTS post_id_idx ON public.post USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS post_id_idx ON public.post USING btree (id);
 
 CREATE INDEX IF NOT EXISTS post_thread_id_idx ON public.post USING btree (thread, id);
 
@@ -1034,16 +1000,16 @@ CREATE INDEX IF NOT EXISTS post_rootId_post_path_idx ON public.post USING btree 
 
 CREATE INDEX IF NOT EXISTS thread_slug_idx ON public.thread USING btree (slug, id) WHERE (slug IS NOT NULL);
 
-CREATE INDEX IF NOT EXISTS thread_id_idx ON public.thread USING btree (id);
+CREATE UNIQUE INDEX IF NOT EXISTS thread_id_idx ON public.thread USING btree (id);
 
 CREATE INDEX IF NOT EXISTS thread_forum_idx ON public.thread USING btree (id, forum, created);
 
 CREATE INDEX IF NOT EXISTS person_id_nickname_email_idx ON public.person USING btree (id, nickname, email);
 
-CREATE INDEX IF NOT EXISTS person_nickname_idx ON public.person USING btree (nickname);
+CREATE UNIQUE INDEX IF NOT EXISTS person_nickname_idx ON public.person USING btree (nickname);
 
 CREATE INDEX IF NOT EXISTS forum_users_user_nickname_idx ON public.forum_users USING btree (user_nickname, forum_slug);
 
-CREATE INDEX IF NOT EXISTS vote_thread_author_idx ON public.vote USING btree (thread_id, user_nickname);
+CREATE UNIQUE INDEX IF NOT EXISTS vote_thread_author_idx ON public.vote USING btree (thread_id, user_nickname);
 
 
