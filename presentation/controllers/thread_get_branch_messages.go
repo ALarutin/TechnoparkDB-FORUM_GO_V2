@@ -46,19 +46,9 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 	if limit == "" {
 		limit = "100"
 	}
-
 	since := r.URL.Query().Get("since")
-
-
-
 	sort := r.URL.Query().Get("sort")
 	desc := r.URL.Query().Get("desc")
-
-	//if time.Since(start) > time.Millisecond * 10{
-	//	logger.Info.Print(time.Since(start))
-	//
-	//}
-	//start = time.Now()
 
 	posts, err := database.GetInstance().GetPosts(id, limit, since, sort, desc)
 	if err != nil {
@@ -66,11 +56,6 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 		logger.Error.Println(err.Error())
 		return
 	}
-	//if time.Since(start) > time.Millisecond * 10{
-	//	logger.Info.Print(time.Since(start))
-	//
-	//}
-	//start = time.Now()
 
 	w.WriteHeader(http.StatusOK)
 	if len(posts) == 0 {
@@ -90,8 +75,4 @@ func GetBranchMessagesHandler(w http.ResponseWriter, r *http.Request) {
 			logger.Error.Println(err.Error())
 		}
 	}
-	//if time.Since(start) > time.Millisecond * 10{
-	//	logger.Info.Print(time.Since(start))
-	//
-	//}
 }

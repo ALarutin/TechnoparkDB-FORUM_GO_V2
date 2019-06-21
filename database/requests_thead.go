@@ -213,40 +213,5 @@ func (db *databaseManager) getRowsForGetPosts(id int, limit, since, sort, desc s
 	if err != nil {
 		return
 	}
-
-	//switch sort {
-	//case "flat":
-	//	rows, err = db.dataBase.Query(
-	//		`SELECT id, author, thread, forum, message, is_edited, parent, created
-	//				FROM func_get_posts_flat($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
-	//		id, limit, since, desc)
-	//	if err != nil {
-	//		return
-	//	}
-	//case "tree":
-	//	rows, err = db.dataBase.Query(
-	//		`SELECT id, author, thread, forum, message, is_edited, parent, created
-	//				FROM func_get_posts_tree($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
-	//		id, limit, since, desc)
-	//	if err != nil {
-	//		return
-	//	}
-	//case "parent_tree":
-	//	rows, err = db.dataBase.Query(
-	//		`SELECT id, author, thread, forum, message, is_edited, parent, created
-	//				FROM func_get_posts_parent_tree($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
-	//		id, limit, since, desc)
-	//	if err != nil {
-	//		return
-	//	}
-	//default:
-	//	rows, err = db.dataBase.Query(
-	//		`SELECT id, author, thread, forum, message, is_edited, parent, created
-	//				FROM func_get_posts($1::INT, $2::INT, $3::INT, $4::BOOLEAN)`,
-	//		id, limit, since, desc)
-	//	if err != nil {
-	//		return
-	//	}
-	//}
 	return
 }

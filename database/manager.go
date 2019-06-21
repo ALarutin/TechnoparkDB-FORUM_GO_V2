@@ -17,7 +17,7 @@ func loadConfiguration() (pgxConfig pgx.ConnConfig) {
 	pgxConfig.Host = "localhost"
 	pgxConfig.User = "postgres"
 	pgxConfig.Password = "1209qawsed"
-	pgxConfig.Database = "tp_perf"
+	pgxConfig.Database = "postgres"
 	pgxConfig.Port = 5432
 	return
 }

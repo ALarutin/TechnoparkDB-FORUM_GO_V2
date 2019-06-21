@@ -42,7 +42,6 @@ func GetUsersHandler(w http.ResponseWriter, r *http.Request) {
 	since := r.URL.Query().Get("since")
 	desc := r.URL.Query().Get("desc")
 
-
 	users, err := database.GetInstance().GetUsers(slug, since, desc, limit)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
