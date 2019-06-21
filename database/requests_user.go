@@ -4,9 +4,9 @@ import "data_base/models"
 
 func (db *databaseManager) GetUser(nickname string) (user models.User, err error) {
 	row := db.dataBase.QueryRow(
-		`SELECT * FROM func_get_user($1::citext)`,
-		nickname)
-	err = row.Scan(&user.IsNew, &user.ID, &user.Nickname, &user.Email, &user.Fullname, &user.About)
+		`SELECT id, nickname, email, fullname, about
+			FROM public.person WHERE nickname = $1`, nickname)
+	err = row.Scan(&user.ID, &user.Nickname, &user.Email, &user.Fullname, &user.About)
 	if err != nil {
 		return
 	}

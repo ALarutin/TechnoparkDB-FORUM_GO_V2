@@ -49,18 +49,19 @@ func (db *databaseManager) CreatePost(posts []models.Post, id int, forum string)
 }
 
 func (db *databaseManager) GetThreadById(threadId int) (thread models.Thread, err error) {
-	row := db.dataBase.QueryRow(`SELECT * FROM func_get_thread_by_id($1::INT)`, threadId)
-	err = row.Scan(&thread.IsNew, &thread.ID, &thread.Slug, &thread.Author, &thread.Forum,
+	row := db.dataBase.QueryRow(
+		`SELECT id, (CASE WHEN slug ISNULL THEN '' ELSE slug END), author, forum, title, message, votes, created
+			FROM public.thread WHERE id = $1`, threadId)
+	err = row.Scan(&thread.ID, &thread.Slug, &thread.Author, &thread.Forum,
 		&thread.Title, &thread.Message, &thread.Votes, &thread.Created)
-	if err != nil {
-		return
-	}
 	return
 }
 
 func (db *databaseManager) GetThreadBySlug(slug string) (thread models.Thread, err error) {
-	row := db.dataBase.QueryRow(`SELECT * FROM func_get_thread_by_slug($1::citext)`, slug)
-	err = row.Scan(&thread.IsNew, &thread.ID, &thread.Slug, &thread.Author, &thread.Forum,
+	row := db.dataBase.QueryRow(
+		`SELECT id, (CASE WHEN slug ISNULL THEN '' ELSE slug END), author, forum, title, message, votes, created
+			FROM public.thread WHERE slug = $1`, slug)
+	err = row.Scan(&thread.ID, &thread.Slug, &thread.Author, &thread.Forum,
 		&thread.Title, &thread.Message, &thread.Votes, &thread.Created)
 	if err != nil {
 		return

@@ -24,7 +24,7 @@ func GetUserInfoHandler(w http.ResponseWriter, r *http.Request) {
 
 	user, err := database.GetInstance().GetUser(nickname)
 	if err != nil {
-		if err.Error() == errorPqNoDataFound {
+		if user.ID == 0 {
 			myJSON := fmt.Sprintf(`{"%s%s%s"}`, messageCantFind, cantFindUser, nickname)
 			w.WriteHeader(http.StatusNotFound)
 			_, err := w.Write([]byte(myJSON))

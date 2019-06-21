@@ -43,11 +43,10 @@ func (db *databaseManager) CreateThread(thread models.Thread) (t models.Thread, 
 }
 
 func (db *databaseManager) GetForum(slug string) (forum models.Forum, err error) {
-	row := db.dataBase.QueryRow(`SELECT * FROM func_get_forum($1::citext)`, slug)
-	err = row.Scan(&forum.IsNew, &forum.ID, &forum.Slug, &forum.User, &forum.Title, &forum.Posts, &forum.Threads)
-	if err != nil {
-		return
-	}
+	row := db.dataBase.QueryRow(
+		`SELECT id, slug, author, title, posts, threads 
+			FROM public.forum WHERE slug = $1`, slug)
+	err = row.Scan(&forum.ID, &forum.Slug, &forum.User, &forum.Title, &forum.Posts, &forum.Threads)
 	return
 }
 

@@ -35,7 +35,7 @@ func GetThreadInfoThreadHandler(w http.ResponseWriter, r *http.Request) {
 		thread, err = database.GetInstance().GetThreadBySlug(slug)
 	}
 	if err != nil {
-		if err.Error() == errorPqNoDataFound {
+		if thread.ID == 0 {
 			myJSON := fmt.Sprintf(`{"%s%s%s/%d"}`, messageCantFind, cantFindThread, slug, id)
 			w.WriteHeader(http.StatusNotFound)
 			_, err = w.Write([]byte(myJSON))
